@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>手写一个bind</title>
+</head>
+<body>
+    <script>
+        // demo 不清楚可以直接看mdn上的对于bind做的polyfill
+        // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function/bind#Compatibility
+        var temp = {
+            a: 1,
+        };
+        function foo(val1, val2) {
+            console.log(val1);
+            console.log(val2);
+            console.log(this.a);
+        }
+        /*
+        * bind特性
+        * 1、预置
+        * 2、返回一个函数，绑定this
+        * 3、针对new函数，特殊处理，因为new的优先级高啊 ps：this的优先级 => new > 显式 > 隐式 > 默认
+        */
+        Function.prototype.xbind = function(thisArgs) {
+            if (typeof this !== 'function') {
+                return;
+            }
+            var _self = this;
+            var tempFn = function() {};
+            var prepareArg = Array.prototype.slice.call(arguments, 1); // 获取预设的值
+            var final = function() {
+                return _self.apply(this instanceof final ? this : thisArgs, prepareArg.concat(Array.prototype.slice.call(arguments)));
+            }
+            // 维持原型关系
+            if (this.prototype) {
+                tempFn.prototype = this.prototype;
+            }
+            // new生成的新对象作为this传入的话 新对象的__proto__就是tempFn实例了
+            final.prototype = new tempFn();
+            return final;
+        }
+        var final = foo.xbind(temp, 'val1');
+        final('val2');
+    </script>
+</body>
+</html>
